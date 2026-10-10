@@ -4,7 +4,9 @@ import argparse
 import json
 
 from agent.allocation import allocate_amount, validate_allocation_input
+from agent.preferences import Preferences, select_buckets
 from agent.profiles import select_profiles
+from agent.tools import AnalysisTools
 from src.pipeline import run_mpt_analysis
 
 
@@ -20,6 +22,10 @@ def main(argv: list[str] | None = None) -> None:
         "--hide-dust", action="store_true",
         help="Group display holdings below 0.5%%; retain exact targets",
     )
+    parser.add_argument("--emphasis", choices=("lower_risk", "balanced", "higher_return"),
+                        help="Select needs-driven conservative/balanced/growth buckets")
+    parser.add_argument("--max-volatility", type=float, help="Annual volatility ceiling as a decimal, e.g. 0.20")
+    parser.add_argument("--min-return", type=float, help="Historical annual expected-return floor as a decimal")
     parser.add_argument("--explain", action="store_true", help="Include an offline explanation")
     parser.add_argument("--llm", action="store_true", help="With --explain, enable Groq API calls")
     parser.add_argument("--question", help="With --explain --llm, ask about existing historical results")
@@ -40,6 +46,15 @@ def main(argv: list[str] | None = None) -> None:
         except ValueError as error:
             parser.error(str(error))
 
+    preferences = None
+    if args.emphasis or args.max_volatility is not None or args.min_return is not None:
+        try:
+            preferences = Preferences(args.emphasis or "balanced", args.max_volatility, args.min_return)
+        except ValueError as error:
+            parser.error(str(error))
+        if args.amount is not None and not args.explain:
+            parser.error("Bucket options cannot be combined with --amount unless --explain is used")
+
     if args.explain:
         from agent.graph import run_agent, validate_question
         try:
@@ -48,7 +63,10 @@ def main(argv: list[str] | None = None) -> None:
             parser.error(str(error))
         output = run_agent(amount=args.amount, currency=currency,
                            profile=args.profile or "medium", hide_dust=args.hide_dust,
-                           question=args.question, use_llm=args.llm)
+                           question=args.question, use_llm=args.llm,
+                           **({} if preferences is None else {"preferences": preferences}))
+    elif preferences is not None:
+        output = select_buckets(AnalysisTools(run_mpt_analysis().to_dict()), preferences)
     elif args.amount is None:
         payload = run_mpt_analysis().to_dict()
         profiles = select_profiles(payload)

@@ -7,6 +7,8 @@ from agent.allocation import allocate_amount, validate_allocation_input
 from agent.cache import load_analysis
 from agent.explainer import build_facts, default_plan, render_explanation
 from agent.guardrails import validate_plan, validate_rendered
+from agent.news import NewsProvider, sanitize_news
+from agent.preferences import Preferences, select_buckets
 from agent.provider import DEFAULT_MODEL, GroqExplainer, ProviderError
 from agent.tools import AnalysisTools
 
@@ -16,6 +18,9 @@ class AgentState(TypedDict, total=False):
     tools: AnalysisTools
     profiles: dict
     allocation: dict | None
+    buckets: dict | None
+    news: list
+    news_status: str
     facts: dict
     plan: dict
     mode: str
@@ -41,12 +46,17 @@ def _langgraph():
 
 def run_agent(payload: dict | None = None, *, amount: Any = None, currency: str = 'USD',
               profile: str = 'medium', hide_dust: bool = False, question: str | None = None,
-              use_llm: bool = False, provider: GroqExplainer | None = None) -> dict:
+              use_llm: bool = False, provider: GroqExplainer | None = None,
+              preferences: Preferences | None = None,
+              news_provider: NewsProvider | None = None) -> dict:
     """Explain an isolated analysis, offline unless use_llm is explicit.
 
     LangGraph is optional. Without it the same nodes run sequentially. Baseline
     and allocation validation failures propagate; only explanation failures fall
     back. An injected provider is caller-owned and is never used in offline mode.
+    Preferences add three needs-driven buckets chosen from the frontier. News is
+    fetched only from an explicitly injected news_provider, sanitized, treated as
+    untrusted context, and never affects calculations; its failure is non-fatal.
     """
     validate_question(question)
     if question is not None and not use_llm:
@@ -64,14 +74,30 @@ def run_agent(payload: dict | None = None, *, amount: Any = None, currency: str 
         return {'tools': tools, 'profiles': {name: tools.get_profile(name)
                                            for name in ('low', 'medium', 'high')}}
 
+    def bucket_node(state):
+        if preferences is None:
+            return {'buckets': None}
+        return {'buckets': select_buckets(state['tools'], preferences)}
+
+    def news_node(state):
+        if news_provider is None:
+            return {'news': [], 'news_status': 'not_requested'}
+        assets = state['tools'].get_metadata()['assets']
+        try:
+            return {'news': sanitize_news(list(news_provider.fetch(list(assets))), assets),
+                    'news_status': 'ok'}
+        except Exception:
+            # Never copy provider errors; explanations proceed without news.
+            return {'news': [], 'news_status': 'unavailable'}
+
     def allocation_node(state):
         allocation = None if amount is None else allocate_amount(
             amount, currency, state['payload'], profile).to_dict(hide_dust=hide_dust)
         return {'allocation': allocation}
 
     def explain_node(state):
-        facts = build_facts(state['tools'], state['allocation'])
-        update = {'facts': facts, 'plan': default_plan(), 'mode': 'offline',
+        facts = build_facts(state['tools'], state['allocation'], state['buckets'], state['news'])
+        update = {'facts': facts, 'plan': default_plan(facts), 'mode': 'offline',
                   'model': None, 'fallback_reason': None, 'tool_calls': []}
         if not use_llm:
             return update
@@ -108,10 +134,13 @@ def run_agent(payload: dict | None = None, *, amount: Any = None, currency: str 
         explanation.update({key: state[key] for key in ('mode', 'model', 'fallback_reason', 'tool_calls')})
         explanation['provider'] = 'groq' if use_llm else None
         explanation['question_answered'] = bool(question and state['mode'] == 'llm' and plan['status'] == 'supported')
-        return {'result': {'profiles': state['profiles'], 'allocation': state['allocation'],
-                           'explanation': explanation}}
+        return {'result': {'profiles': state['profiles'], 'buckets': state['buckets'],
+                           'allocation': state['allocation'],
+                           'news': [item.to_dict() for item in state['news']],
+                           'news_status': state['news_status'], 'explanation': explanation}}
 
     nodes = [('load_analysis', load_node), ('build_profiles', profile_node),
+             ('select_buckets', bucket_node), ('fetch_news', news_node),
              ('allocate', allocation_node), ('explain', explain_node), ('guardrail', guardrail_node)]
     graph_api = _langgraph()
     if graph_api is None:

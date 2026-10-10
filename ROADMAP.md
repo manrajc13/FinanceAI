@@ -493,3 +493,23 @@ profiles, allocation provenance, unsupported questions, and explicit CLI opt-in.
 Baseline source, financial assumptions, frozen data, and baseline dependencies
 are unchanged. README and AGENTS now document the implemented interfaces.
 The next milestone is Phase 4: the API service; no API or GUI is implemented yet.
+
+### Needs-driven buckets and news seam (agent layer)
+
+- `agent/preferences.py`: `Preferences(emphasis, max_volatility, min_expected_return)`
+  filters the unchanged frontier to a window; `select_buckets()` returns
+  conservative (lowest volatility), balanced (highest Sharpe) and growth (highest
+  return inside a binding risk ceiling, else the interior volatility midpoint).
+  `emphasis` only chooses which bucket is highlighted as `recommended`.
+  Infeasible limits return the closest frontier point, never an invented portfolio.
+- Explanations gain Python-written `bucket.*` facts (window, per-bucket role,
+  trade-offs versus balanced, recommendation) and optional `news.*` facts. The
+  model still only selects approved fact IDs.
+- `agent/news.py` defines `NewsProvider`, sanitization and an offline default.
+  **No live news provider exists yet.** It must be opt-in, live outside `src/`, and
+  its items stay untrusted, attributed context that never affects calculations.
+- Usage: `python -m agent --emphasis higher_return --max-volatility 0.25`, or
+  `run_agent(preferences=Preferences(...), news_provider=...)`. Without
+  preferences, previous output is unchanged (`buckets` is `None`).
+- Next: a live news provider, natural-language needs parsed into `Preferences`
+  through a strict schema, then the API (`POST /buckets`, `POST /explain`) and GUI.

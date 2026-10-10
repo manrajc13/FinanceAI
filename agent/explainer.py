@@ -3,6 +3,7 @@
 from copy import deepcopy
 from typing import Any
 
+from agent.news import news_facts
 from agent.profiles import DISCLAIMER
 from agent.tools import AnalysisTools
 
@@ -30,7 +31,8 @@ def _weights(label: str, weights: dict) -> str:
     return label + ' target weights: ' + ', '.join(f'{ticker} {weight:.4%}' for ticker, weight in weights.items()) + '.'
 
 
-def build_facts(tools: AnalysisTools, allocation: dict | None = None) -> dict[str, str]:
+def build_facts(tools: AnalysisTools, allocation: dict | None = None,
+                buckets: dict | None = None, news: list | None = None) -> dict[str, str]:
     """Only Python-generated facts may enter the final explanation."""
     facts = {}
     for name in ('low', 'medium', 'high'):
@@ -61,17 +63,84 @@ def build_facts(tools: AnalysisTools, allocation: dict | None = None) -> dict[st
             + f"; grouped holdings {display['hidden_amount']}; total {display['total']}. "
             + allocation['notice']
         )
+    if buckets is not None:
+        facts.update(bucket_facts(buckets))
+    if news:
+        facts.update(news_facts(news))
+    return facts
+
+
+BUCKET_ROLES = {
+    'conservative': 'the lowest-volatility option inside your window',
+    'balanced': 'the highest Sharpe ratio inside your window',
+    'growth': 'the higher-return end of your window',
+}
+REASONS = {
+    'return_floor_above_frontier': 'The requested return floor exceeds every sampled frontier point.',
+    'risk_ceiling_below_frontier': 'The requested risk ceiling is below the lowest-volatility frontier point.',
+    'risk_ceiling_and_return_floor_conflict': 'No sampled frontier point satisfies both the risk ceiling and the return floor.',
+}
+
+
+def _limit(value: float | None) -> str:
+    return 'no limit' if value is None else f'{value:.2%}'
+
+
+def _delta(a: dict, b: dict) -> str:
+    return (f"{a['expected_return'] - b['expected_return']:+.2%} expected return and "
+            f"{a['volatility'] - b['volatility']:+.2%} volatility")
+
+
+def bucket_facts(result: dict) -> dict[str, str]:
+    """Python-written rationale: window, role of each bucket and cross-bucket trade-offs."""
+    prefs = result['preferences']
+    facts = {'bucket.window': (
+        f"Your stated needs: emphasis {prefs['emphasis'].replace('_', ' ')}; maximum annual volatility "
+        f"{_limit(prefs['max_volatility'])}; minimum historical expected return "
+        f"{_limit(prefs['min_expected_return'])}. The unchanged efficient frontier spans "
+        f"{result['frontier_range']['min_volatility']:.2%} to {result['frontier_range']['max_volatility']:.2%} "
+        f"volatility.")}
+    if result['status'] != 'ok':
+        closest = result['closest']
+        facts['bucket.infeasible'] = (
+            REASONS[result['reason']] + f" The closest sampled frontier point (index {closest['frontier_index']}) has "
+            f"historical expected return {closest['expected_return']:.4%} and volatility {closest['volatility']:.4%}; "
+            'no portfolio was invented to meet the request.')
+        return facts
+    buckets = result['buckets']
+    for name, bucket in buckets.items():
+        facts[f'bucket.{name}.summary'] = _metrics(name.title() + f' bucket (frontier point {bucket["frontier_index"]})', bucket)
+        facts[f'bucket.{name}.weights'] = _weights(name.title() + ' bucket', bucket['weights'])
+        if bucket['warnings']:
+            facts[f'bucket.{name}.warnings'] = name.title() + ' bucket: ' + ' '.join(
+                WARNINGS[code] for code in bucket['warnings'])
+    for name, other in (('conservative', 'balanced'), ('growth', 'balanced')):
+        a, b = buckets[name], buckets[other]
+        facts[f'bucket.{name}.why'] = (
+            f"{name.title()} is {BUCKET_ROLES[name]}. Versus Balanced it changes historical "
+            f"{_delta(a, b)} (Sharpe {a['sharpe_ratio'] - b['sharpe_ratio']:+.4f}).")
+    facts['bucket.balanced.why'] = f"Balanced has {BUCKET_ROLES['balanced']} (Sharpe {buckets['balanced']['sharpe_ratio']:.4f})."
+    recommended = result['recommended']
+    facts['bucket.recommended'] = (
+        f"{recommended.title()} matches your stated emphasis ({prefs['emphasis'].replace('_', ' ')}). "
+        'This is a match to the stated preference over historical data, not personalized advice.')
     return facts
 
 
 def mandatory_facts(facts: dict[str, str]) -> list[str]:
     return [f'profile.{name}.summary' for name in ('low', 'medium', 'high')] + [
-        key for key in facts if key.endswith('.warnings') or key == 'allocation'
+        key for key in facts
+        if key.endswith('.warnings') or key in ('allocation', 'bucket.window', 'bucket.infeasible')
+        or (key.startswith('bucket.') and key.endswith('.summary'))
     ]
 
 
-def default_plan() -> dict[str, Any]:
-    return {'status': 'supported', 'fact_ids': [f'profile.{name}.selection' for name in ('low', 'medium', 'high')]}
+def default_plan(facts: dict[str, str] | None = None) -> dict[str, Any]:
+    ids = [f'profile.{name}.selection' for name in ('low', 'medium', 'high')]
+    if facts:
+        ids += [key for key in ('bucket.recommended', 'bucket.conservative.why',
+                                'bucket.balanced.why', 'bucket.growth.why') if key in facts]
+    return {'status': 'supported', 'fact_ids': ids}
 
 
 def render_explanation(plan: dict, facts: dict[str, str], metadata: dict) -> dict:

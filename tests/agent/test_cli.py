@@ -75,3 +75,19 @@ def test_llm_cli_requires_explicit_opt_in(monkeypatch, capsys):
     cli.main(['--explain', '--llm', '--question', 'Explain the high profile'])
     assert run.call_args.kwargs['use_llm'] is True
     assert run.call_args.kwargs['question'] == 'Explain the high profile'
+
+
+def test_bucket_options_output_needs_driven_buckets(payload, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "run_mpt_analysis", Mock(return_value=SimpleNamespace(to_dict=lambda: payload)))
+    cli.main(["--emphasis", "higher_return", "--max-volatility", "0.5"])
+    output = json.loads(capsys.readouterr().out)
+    assert output["status"] == "ok" and output["recommended"] == "growth"
+    assert list(output["buckets"]) == ["conservative", "balanced", "growth"]
+
+
+def test_invalid_bucket_options_fail_before_analysis(monkeypatch):
+    run = Mock()
+    monkeypatch.setattr(cli, "run_mpt_analysis", run)
+    with pytest.raises(SystemExit):
+        cli.main(["--max-volatility", "-1"])
+    run.assert_not_called()
