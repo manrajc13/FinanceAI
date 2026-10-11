@@ -18,7 +18,9 @@ baseline, profiles, allocations, and default explanations remain offline.
 | Phase 1: deterministic profiles | Complete | Consume the existing structured profile contract |
 | Phase 2: fractional allocation | Complete; optional whole shares deferred | Consume exact targets and reconciled display |
 | Phase 3: LLM explanations | Complete | Preserve grounded facts and explicit offline fallback |
-| Phases 4–6: API, GUI, research | Planned; not implemented | Build after the profile and allocation contracts stabilize |
+| Phase 4: API service | Complete (local); deployment planned in `plan.md` §7 | Render deployment with dataset bootstrap |
+| Phase 5: GUI | Complete: Next.js dashboard in `gui/` | Vercel deployment |
+| Phase 6: research | Planned; not implemented | Out-of-sample backtest |
 
 ---
 
@@ -111,8 +113,8 @@ FinanceAI/
 | Agentic layer | ✅ Phase 3 done | Groq, LangGraph, read-only tools, approved fact references and offline fallback |
 | Risk profiles (low / medium / high) | ✅ Done | Sampled candidates, provenance, concentration and overlap flags |
 | Amount-based allocation | ✅ Fractional mode done | Exact targets, reconciled display, USD/INR labels, CLI; whole shares deferred |
-| API service | ❌ Not started | — |
-| GUI | ❌ Not started | — |
+| API service | ✅ Done | FastAPI `api/`, saved plans, CSV export, contract and sanitization tests |
+| GUI | ✅ Done | Next.js `gui/`, seven pages, Vitest + Playwright smoke tests |
 
 ### 2.3 Observations from reviewing the code
 
@@ -360,7 +362,7 @@ FinanceAI/
 | Allocation mode | Implemented: fractional amounts; whole shares remain an optional later extension | Phase 2 |
 | LLM framework | Implemented: optional LangGraph, same-node sequential fallback | Phase 3 |
 | LLM provider and model | Implemented: Groq Responses, `openai/gpt-oss-20b`, OpenAI SDK | Phase 3 |
-| GUI stack | React · Streamlit | Phase 5 |
+| GUI stack | Selected: Next.js (React), Recharts, TanStack Query | Phase 5 |
 | Ticker universe | Current 10 US stocks · larger / NSE universe (requires re-download) | All |
 
 ---

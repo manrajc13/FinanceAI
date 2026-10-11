@@ -14,8 +14,9 @@ and future LLM or user-interface code.
 (Phase 3) are complete. Optional LangGraph orchestration uses Groq's
 `openai/gpt-oss-20b` through the OpenAI SDK Responses API. The model selects
 approved fact references; Python renders their financial statements. Baseline,
-profile, allocation, and default explanation commands run offline. Phase 4
-(the API service) is next.
+profile, allocation, and default explanation commands run offline. Phase 4 (a
+FastAPI service in `api/`) and Phase 5 (a Next.js dashboard in `gui/`) are
+implemented; deployment (Render + Vercel) is planned in [plan.md](plan.md) §7.
 See [ROADMAP.md](ROADMAP.md) for progress,
 remaining decisions, and the sequence of small feature-branch commits.
 
@@ -42,12 +43,17 @@ Implemented:
 - Read-only analysis tools, cached analysis, and LangGraph explanation workflow
 - Opt-in Groq Responses calls, reference guardrails, and offline fallback
 - Fixed evaluation fixtures and CI with and without optional dependencies
+- FastAPI service (`api/`) over the agent layer, with saved plans and CSV export
+- Display analytics (`analytics/`): sector breakdowns, correlations, rebased
+  prices, and an in-sample buy-and-hold simulation (clearly labelled hindsight)
+- Next.js dashboard (`gui/`) reproducing the reference design with real data
 
 Not implemented:
 
 - Whole-share allocation, share counts, or currency conversion
 - RAG or unrestricted financial question answering
-- API service or GUI
+- Authentication or multi-user accounts (saved plans are single-user)
+- Out-of-sample backtesting (ROADMAP Phase 6)
 - Machine learning or return prediction
 - Sentiment or news analysis
 - Black-Litterman or CAPM return estimation
@@ -95,6 +101,10 @@ FinanceAI/
 ├── README.md
 ├── requirements.txt
 ├── ROADMAP.md
+├── analytics/                 # display computations for the dashboard (pure, tested)
+├── api/                       # FastAPI service: routers, schemas, saved plans
+├── gui/                       # Next.js dashboard (see gui/README.md)
+├── plan.md                    # API / dashboard / deployment implementation plan
 ├── agent/
 │   ├── __init__.py
 │   ├── __main__.py
@@ -110,6 +120,8 @@ FinanceAI/
 │   ├── requirements.txt
 │   └── prompts/system.md
 ├── data/
+│   ├── reference/
+│   │   └── tickers.json       # static company names and sector groups
 │   ├── raw/
 │   │   └── stock_prices.parquet
 │   └── processed/
@@ -646,3 +658,50 @@ amounts, if supplied) to Groq. Original local metadata remains in returned JSON;
 tool results sent to Groq omit `dataset_path`. No browser, code execution, market
 data, trade, or file-writing tool is exposed. Live smoke checks passed for both
 a general comparison and a frontier-point tool call using `openai/gpt-oss-20b`.
+
+## API service (roadmap Phase 4)
+
+`api/` is a FastAPI application over the existing contracts; it never
+re-implements the MPT workflow. At startup it runs `agent.cache.load_analysis()`
+once on the frozen Parquet and keeps the snapshot in memory.
+
+```bash
+python -m pip install -r requirements.txt -r agent/requirements.txt -r api/requirements.txt
+uvicorn api.main:app --reload --port 8000   # docs at http://127.0.0.1:8000/docs
+```
+
+| Endpoint | Backed by |
+| --- | --- |
+| `GET /api/health`, `GET /api/metadata` | snapshot metadata, disclaimer |
+| `GET /api/universe`, `/api/universe/correlation`, `/api/universe/prices` | `analytics.universe` |
+| `GET /api/frontier` | frontier points with Sharpe, GMV, Max Sharpe, profile indices |
+| `GET /api/profiles`, `GET /api/profiles/{name}` | `select_profiles()` unchanged, plus `analytics.breakdown` |
+| `GET /api/performance` | `analytics.performance` (in-sample buy-and-hold, hindsight) |
+| `POST /api/allocate`, `POST /api/allocate/export.csv` | `allocate_amount()` |
+| `POST /api/buckets` | `select_buckets()` |
+| `POST /api/explain` | `run_agent()`; LLM only with `use_llm=true`, rate limited |
+| `GET/POST /api/plans`, `GET/DELETE /api/plans/{id}`, `GET /api/plans/{id}/export.csv` | SQLite locally, any SQLAlchemy URL in production |
+
+Rules: the API never accepts client-supplied weights (portfolios are referenced
+by profile name or frontier index); money is a decimal string in requests and
+responses; `dataset_path` is stripped from every response; agent `ValueError`s
+become 422 responses with the fixed message; provider failures return 200 with
+`explanation.mode = "fallback"`. Configuration uses `FINANCEAI_*` variables (see
+`.env.example`).
+
+`analytics.performance` is the only new financial computation: the value of a
+planned amount bought at the first trading day of the range and held, with no
+rebalancing, costs, taxes or FX. The weights were selected using the same data,
+so it is hindsight, not a backtest or forecast, and every response says so.
+
+API tests (`tests/api`, `tests/analytics`) run the real pipeline on synthetic
+prices with outbound sockets blocked; they are skipped automatically when the
+API dependencies are not installed.
+
+## Dashboard (roadmap Phase 5)
+
+`gui/` is a Next.js dashboard with Overview, Portfolio, Optimizer, Allocation,
+Saved plans, AI Explainer and Settings pages. See [gui/README.md](gui/README.md)
+for setup; in short, start the API, then `npm install && npm run dev` in `gui/`.
+All formatting happens in `gui/lib/format.ts`; every page shows the dataset
+window, annualization, risk-free rate, constraints and disclaimer.

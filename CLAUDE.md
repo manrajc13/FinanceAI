@@ -1,6 +1,6 @@
 # FinanceAI
 
-Deterministic Markowitz MPT baseline (`src/`) with a downstream agent layer (`agent/`) that selects and explains portfolios from the efficient frontier. An API (`api/`) and React GUI (`gui/`) are planned and not yet built.
+Deterministic Markowitz MPT baseline (`src/`) with a downstream agent layer (`agent/`) that selects and explains portfolios from the efficient frontier, a FastAPI service (`api/`), display analytics (`analytics/`) and a Next.js dashboard (`gui/`). `plan.md` is the implementation plan for the API, dashboard and deployment.
 
 @AGENTS.md
 
@@ -18,6 +18,9 @@ python -m agent --emphasis higher_return --max-volatility 0.25   # needs-driven 
 python -m agent --amount 10000 --currency USD --profile medium   # allocation
 python -m agent --explain                 # grounded explanation, offline
 python -m agent --explain --llm           # Groq call; needs GROQ_API_KEY in .env
+uvicorn api.main:app --reload --port 8000 # API (pip install -r api/requirements.txt)
+cd gui && npm run dev                     # dashboard on :3000, proxies /api to :8000
+cd gui && npm test && npm run e2e         # unit tests; e2e needs API + dev server running
 git diff --check
 ```
 
@@ -43,4 +46,6 @@ git diff --check
 - Existing tests assert exact call kwargs and output shapes (for example `run_agent` forwarding in `tests/agent/test_cli.py`). Make new options additive so default output is unchanged.
 - Agent tests block sockets via `tests/agent/conftest.py`; keep new tests offline with injected fake providers.
 - Optional dependencies go in `agent/requirements.txt` only. `.env` stays git-ignored.
+- API: every response goes through `api.sanitize.public()` (agent payloads must keep `dataset_path` internally). Catch agent `ValueError`s with `api.errors.domain_errors()`, never globally.
+- `gui/` uses Next.js 16 with Cache Components: client views that query the API sit behind `<Suspense>`, hidden routes stay mounted (close modals in effect cleanup), and `npm run gen:api` must be re-run after API schema changes.
 - Commit in small validated steps on `feature/ai-agentic-features`, only when asked. Update `README.md` and `ROADMAP.md` when supported behaviour changes.

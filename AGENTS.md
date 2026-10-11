@@ -97,8 +97,19 @@ Rules for consumers:
 7. Clearly distinguish historical expected return from future realized return.
 8. Do not mutate the frozen Parquet file during analysis.
 
-If an API is later added, the endpoint should call `run_mpt_analysis()` and
-serialize `result.to_dict()`. It should not duplicate the MPT workflow.
+The API (`api/`) follows this: it loads the payload once through
+`agent.cache.load_analysis()` and calls the existing agent functions. It must not
+duplicate the MPT workflow, must never accept client-supplied weights (resolve
+portfolios by profile name or frontier index), must keep money as decimal
+strings, and must strip `dataset_path` from every response with
+`api.sanitize.public()` (the agent layer itself still needs the field).
+
+`analytics/` holds deterministic display computations the dashboard needs
+(breakdowns, correlations, rebased prices, the in-sample buy-and-hold
+simulation). It may import `src` and `agent`; neither imports it. Any number it
+adds must be labelled with its method (the simulation is hindsight, not a
+forecast or backtest). `gui/` formats API values only and performs no
+financial calculations.
 
 ## Downstream implementation status and handoff
 
@@ -163,6 +174,16 @@ python -m src.main
 git diff --check
 git status
 ```
+
+For API, analytics or dashboard changes, also run:
+
+```bash
+python -m pytest tests/api tests/analytics -v      # needs api/requirements.txt
+cd gui && npm run lint && npm run typecheck && npm test && npm run build
+```
+
+Regenerate `gui/lib/api/schema.d.ts` (`npm run gen:api` with the API running)
+whenever an API schema changes.
 
 For programmatic-contract changes, also verify JSON serialization:
 

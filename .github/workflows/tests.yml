@@ -17,3 +17,43 @@ jobs:
       - run: python -m pip check
       - run: python -m pytest -v
       - run: git diff --check
+
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install -r requirements.txt -r agent/requirements.txt -r api/requirements.txt
+      - run: python -m pip check
+      # Synthetic fixtures only; the frozen Parquet is not available in CI.
+      - run: python -m pytest tests/api tests/analytics -v
+      - name: OpenAPI schema drift
+        run: |
+          python -c "import json; from api.main import app; print(json.dumps(app.openapi()))" > "$RUNNER_TEMP/openapi.json"
+          npx --yes openapi-typescript@7.13.0 "$RUNNER_TEMP/openapi.json" -o gui/lib/api/schema.d.ts
+          git diff --exit-code gui/lib/api/schema.d.ts
+
+  gui:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: gui/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://example.invalid
