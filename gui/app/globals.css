@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/* Design tokens taken from the reference dashboard screenshot. */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --border: #e7e9ee;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --nav-active: #0b1020;
+  --primary: #3b6ef5;
+  --primary-soft: #eef3ff;
+  --positive: #16a34a;
+  --negative: #dc2626;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  /* Categorical slots from the validated dataviz reference palette (light, on #ffffff).
+     Group colors follow the entity, never rank; "Other" is neutral gray. */
+  --series-blue: #2a78d6;
+  --series-aqua: #1baf7a;
+  --series-yellow: #eda100;
+  --series-violet: #4a3aa7;
+  --series-red: #e34948;
+  --series-orange: #eb6834;
+  --series-other: #a3a7ae;
+  --chart-grid: #eceef2;
+  --chart-axis: #c3c2b7;
+  --chart-ink-muted: #898781;
+  --diverging-neg: #c0392b;
+  --diverging-mid: #f0efec;
+  --diverging-pos: #1c5cab;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-nav-active: var(--nav-active);
+  --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
