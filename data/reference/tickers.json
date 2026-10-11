@@ -1,0 +1,15 @@
+{
+  "source": "Static GICS sector classification, manually curated for display only. 'group' is a coarser display bucket; it never affects calculations.",
+  "assets": {
+    "AAPL": {"name": "Apple Inc.", "sector": "Information Technology", "group": "Technology"},
+    "MSFT": {"name": "Microsoft Corporation", "sector": "Information Technology", "group": "Technology"},
+    "GOOGL": {"name": "Alphabet Inc. (Class A)", "sector": "Communication Services", "group": "Technology"},
+    "AMZN": {"name": "Amazon.com, Inc.", "sector": "Consumer Discretionary", "group": "Consumer"},
+    "META": {"name": "Meta Platforms, Inc.", "sector": "Communication Services", "group": "Technology"},
+    "NVDA": {"name": "NVIDIA Corporation", "sector": "Information Technology", "group": "Technology"},
+    "JPM": {"name": "JPMorgan Chase & Co.", "sector": "Financials", "group": "Financials"},
+    "JNJ": {"name": "Johnson & Johnson", "sector": "Health Care", "group": "Healthcare"},
+    "XOM": {"name": "Exxon Mobil Corporation", "sector": "Energy", "group": "Energy"},
+    "PG": {"name": "The Procter & Gamble Company", "sector": "Consumer Staples", "group": "Consumer"}
+  }
+}
