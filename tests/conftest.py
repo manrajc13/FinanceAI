@@ -1,10 +1,16 @@
 """Deterministic fixtures independent of the private frozen dataset."""
 
+from importlib.util import find_spec
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from src.config import TICKERS
+
+
+# The baseline-only environment has no API dependencies (api/requirements.txt).
+collect_ignore = [] if all(find_spec(name) for name in ("fastapi", "sqlmodel", "limits")) else ["api"]
 
 
 @pytest.fixture

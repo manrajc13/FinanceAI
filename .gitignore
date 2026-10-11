@@ -9,6 +9,7 @@ venv/
 .env
 .env.*
 !.env.example
+!gui/.env.local.example
 
 # Python-generated files
 __pycache__/
@@ -25,4 +26,14 @@ htmlcov/
 
 # Locally generated datasets and figures
 data/raw/*.parquet
+data/raw/*.part
 outputs/figures/*.png
+
+# API saved-plans database (local SQLite)
+data/app/
+
+# Next.js frontend
+gui/node_modules/
+gui/.next/
+gui/out/
+gui/next-env.d.ts
