@@ -41,17 +41,33 @@ def normalize_database_url(url: str) -> str:
     return url
 
 
+# Below Neon's ~5-minute idle suspend, which closes connections server-side.
+POOL_RECYCLE_SECONDS = 240
+
+
+def engine_options(url: str) -> dict:
+    """Engine keyword arguments for a (normalized) database URL.
+
+    A server database can close idle connections (Neon suspends after ~5
+    minutes), and the pooled connection then failed the next request with a
+    500. pool_pre_ping tests each connection before use and replaces a dead
+    one; pool_recycle retires connections before the server drops them.
+    """
+    parsed = make_url(url)
+    if parsed.get_backend_name() != "sqlite":
+        return {"pool_pre_ping": True, "pool_recycle": POOL_RECYCLE_SECONDS}
+    options: dict = {"connect_args": {"check_same_thread": False}}
+    if parsed.database in (None, "", ":memory:"):
+        options["poolclass"] = StaticPool
+    return options
+
+
 def create_db_engine(url: str) -> Engine:
     """Create the engine and tables. v1 uses create_all; add Alembic before schema changes."""
-    kwargs: dict = {}
     url = normalize_database_url(url)
     parsed = make_url(url)
-    if parsed.get_backend_name() == "sqlite":
-        kwargs["connect_args"] = {"check_same_thread": False}
-        if parsed.database in (None, "", ":memory:"):
-            kwargs["poolclass"] = StaticPool
-        else:
-            Path(parsed.database).parent.mkdir(parents=True, exist_ok=True)
-    engine = create_engine(url, **kwargs)
+    if parsed.get_backend_name() == "sqlite" and parsed.database not in (None, "", ":memory:"):
+        Path(parsed.database).parent.mkdir(parents=True, exist_ok=True)
+    engine = create_engine(url, **engine_options(url))
     SQLModel.metadata.create_all(engine)
     return engine

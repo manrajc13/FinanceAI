@@ -82,3 +82,12 @@ def test_pasted_postgres_urls_use_the_installed_driver(given, expected):
     """Neon's URL pasted as-is must not select psycopg2, which is not installed."""
     from api.db import normalize_database_url
     assert normalize_database_url(given) == expected
+
+
+def test_server_databases_replace_connections_closed_while_idle():
+    """Neon closes idle connections; the next save used to fail with a 500."""
+    from api.db import POOL_RECYCLE_SECONDS, engine_options
+    options = engine_options("postgresql+psycopg://u:p@ep-x.neon.tech/db?sslmode=require")
+    assert options == {"pool_pre_ping": True, "pool_recycle": POOL_RECYCLE_SECONDS}
+    assert POOL_RECYCLE_SECONDS < 300   # Neon suspends idle compute after ~5 minutes
+    assert "pool_pre_ping" not in engine_options("sqlite:///:memory:")
