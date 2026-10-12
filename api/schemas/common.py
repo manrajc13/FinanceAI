@@ -83,4 +83,8 @@ class ErrorResponse(BaseModel):
     error: ErrorBody
 
 
-ERROR_RESPONSES = {422: {"model": ErrorResponse}, 500: {"model": ErrorResponse}}
+# Explicit descriptions: FastAPI otherwise uses Python's status phrase, and 3.13
+# renamed 422 ("Unprocessable Entity" -> "Content"), so the generated GUI types
+# differed between local 3.11 and CI 3.13.
+ERROR_RESPONSES = {422: {"model": ErrorResponse, "description": "Invalid input"},
+                   500: {"model": ErrorResponse, "description": "Internal error"}}

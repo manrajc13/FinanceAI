@@ -1209,7 +1209,7 @@ export interface operations {
                     "application/json": components["schemas"]["UniverseResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1218,7 +1218,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1247,7 +1247,7 @@ export interface operations {
                     "application/json": components["schemas"]["CorrelationResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1256,7 +1256,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1288,7 +1288,7 @@ export interface operations {
                     "application/json": components["schemas"]["PriceHistoryResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1297,7 +1297,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1346,7 +1346,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProfilesResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1355,7 +1355,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1386,7 +1386,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProfileResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1395,7 +1395,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1428,7 +1428,7 @@ export interface operations {
                     "application/json": components["schemas"]["BucketsResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1437,7 +1437,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1474,7 +1474,7 @@ export interface operations {
                     "application/json": components["schemas"]["PerformanceResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1483,7 +1483,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1516,7 +1516,7 @@ export interface operations {
                     "application/json": components["schemas"]["AllocationResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1525,7 +1525,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1558,7 +1558,7 @@ export interface operations {
                     "text/csv": unknown;
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1567,7 +1567,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1600,7 +1600,7 @@ export interface operations {
                     "application/json": components["schemas"]["ExplainResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1618,7 +1618,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1659,7 +1659,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1668,7 +1668,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1710,7 +1710,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1719,7 +1719,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1759,7 +1759,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1768,7 +1768,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1806,7 +1806,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1815,7 +1815,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1855,7 +1855,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Invalid input */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1864,7 +1864,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Internal Server Error */
+            /** @description Internal error */
             500: {
                 headers: {
                     [name: string]: unknown;
